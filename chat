@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with JSONBin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        #chat-box {
+            width: 80%;
+            height: 300px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: scroll;
+            margin-bottom: 10px;
+            background-color: #fff;
+        }
+
+        #message {
+            width: 70%;
+            padding: 10px;
+            margin-right: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        #send {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-box"></div>
+    <input type="text" id="message" placeholder="Enter message...">
+    <button id="send">Send</button>
+
+    <script>
+        const chatBox = document.getElementById("chat-box");
+        const messageInput = document.getElementById("message");
+
+        const binUrl = "https://api.jsonbin.io/v3/b/YOUR_BIN_ID";  // Replace YOUR_BIN_ID with your actual bin ID
+        const apiKey = "YOUR_MASTER_KEY";  // Replace YOUR_MASTER_KEY with your actual JSONBin Master Key
+
+        // Fetch messages
+        function fetchMessages() {
+            fetch(binUrl, {
+                headers: {
+                    "X-Master-Key": apiKey
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                chatBox.innerHTML = "";
+                data.record.forEach(msg => {
+                    const newMessage = document.createElement("p");
+                    newMessage.textContent = msg;
+                    chatBox.appendChild(newMessage);
+                });
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+        }
+
+        // Send message
+        function sendMessage() {
+            const newMessage = messageInput.value;
+
+            if (newMessage.trim()) {
+                // First, fetch the existing messages
+                fetch(binUrl, {
+                    headers: {
+                        "X-Master-Key": apiKey
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const updatedMessages = [...data.record, newMessage];
+
+                    // Then, update the messages in the bin
+                    fetch(binUrl, {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-Master-Key": apiKey
+                        },
+                        body: JSON.stringify({ record: updatedMessages })
+                    })
+                    .then(response => response.json())
+                    .then(() => {
+                        messageInput.value = "";
+                        fetchMessages();
+                    });
+                });
+            }
+        }
+
+        document.getElementById("send").addEventListener("click", sendMessage);
+
+        // Load messages on page load
+        fetchMessages();
+    </script>
+</body>
+</html>
